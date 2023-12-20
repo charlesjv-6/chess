@@ -1,11 +1,12 @@
 import { countdownTimer } from './chess-clock.js';
+import { playSound } from './sound-manager.js';
 import { 
     isValidBishopMove, 
     isValidKingMove, 
     isValidKnightMove,
     isValidPawnMove, 
     isValidQueenMove, 
-    isValidRookMove 
+    isValidRookMove
 } from './chess-moves.js';
 
 const canvas = document.getElementById('chess-board');
@@ -21,6 +22,7 @@ const rows = canvas.height / cellCize;
 
 let activeSide = '';
 let hasStarted = false;
+let isNotCapturing = true;
 
 const chessboardCoordinates = {
     'a8': [0, 0], 'b8': [1, 0], 'c8': [2, 0], 'd8': [3, 0], 'e8': [4, 0], 'f8': [5, 0], 'g8': [6, 0], 'h8': [7, 0],
@@ -35,20 +37,20 @@ const chessboardCoordinates = {
 
 const pieceSrc = {
     black: {
-        pawn: 'placeholder.png',
-        rook: 'placeholder.png',
-        knight: 'placeholder.png',
-        bishop: 'placeholder.png',
-        king: 'placeholder.png',
-        queen: 'placeholder.png',
+        pawn: './images/pawn-black.png',
+        rook: './images/rook-black.png',
+        knight: './images/knight-black.png',
+        bishop: './images/bishop-black.png',
+        king: './images/king-black.png',
+        queen: './images/queen-black.png',
     },
     white: {
-        pawn: 'placeholder.png',
-        rook: 'placeholder.png',
-        knight: 'placeholder.png',
-        bishop: 'placeholder.png',
-        king: 'placeholder.png',
-        queen: 'placeholder.png',
+        pawn: './images/pawn-white.png',
+        rook: './images/rook-white.png',
+        knight: './images/knight-white.png',
+        bishop: './images/bishop-white.png',
+        king: './images/king-white.png',
+        queen: './images/queen-white.png',
     }
 }
 let blackSet = {
@@ -107,6 +109,17 @@ let whiteSet = {
     white_queen: [3, 7]
 }
 
+// Preload images
+const allPieceImages = {};
+for (const color in pieceSrc) {
+    allPieceImages[color] = {};
+    for (const piece in pieceSrc[color]) {
+        const img = new Image();
+        img.src = pieceSrc[color][piece];
+        allPieceImages[color][piece] = img;
+    }
+}
+
 function start(){
     activeSide = 'white';
     if(!hasStarted) countdownTimer();
@@ -125,15 +138,9 @@ function drawBoard(){
     drawPieces(blackSet);
 }
 
-function drawPiece(col, row, color, src) {
-    const pieceRadius = cellCize / 3;
-    // const image = new Image();
-    // image.src = src;
-    // canvasContext.drawImage(image, (col+0.175) * cellCize, (row+0.175) * cellCize, 50, 50);
-    canvasContext.beginPath();
-    canvasContext.fillStyle = color;
-    canvasContext.arc(( col + 0.5) * cellCize, ( row + 0.5) * cellCize, pieceRadius, 0, 2 * Math.PI)
-    canvasContext.fill();
+function drawPiece(col, row, piece) {
+    const image = allPieceImages[piece.color][piece.type];
+    if(image) canvasContext.drawImage(image, (col + 0.05) * cellCize, (row + 0.05) * cellCize, 65, 65);
 }
 
 let selectedPiece = null;
@@ -211,12 +218,16 @@ function capturePiece(pieceSet, col, row) {
     for (const key in pieceSet) {
         if (Array.isArray(pieceSet[key])) {
             if (pieceSet[key][0] === col && pieceSet[key][1] === row) {
+                isNotCapturing = false;
+                playSound(0);
                 delete pieceSet[key];
                 break;
             }
         } else {
             for (const piece in pieceSet[key]) {
                 if (pieceSet[key][piece][0] === col && pieceSet[key][piece][1] === row) {
+                    isNotCapturing = false;
+                    playSound(0);
                     delete pieceSet[key][piece];
                     break;
                 }
@@ -227,16 +238,20 @@ function capturePiece(pieceSet, col, row) {
 
 function movePiece(selectedPiece, col, row, pieceSet) {
     const color = selectedPiece.includes('white') ? 'white' : 'black';
+    isNotCapturing = true;
+
     Object.keys(pieceSet).find(set => {
         if(set === selectedPiece.substring(6)){
             if(selectedPiece.includes('king')){
                 if(isValidKingMove(color, pieceSet[set], [col, row])) {
+                    if(isNotCapturing) playSound(1);
                     pieceSet[set] = [col, row];
                     if(selectedPiece.includes(activeSide)) activeSide = activeSide === 'white' ? 'black' : 'white';
                 }
             }
             if(selectedPiece.includes('queen')) {
                 if(isValidQueenMove(color, pieceSet[set], [col, row]) && !isPathBlocked(pieceSet[set], [col, row])){
+                    if(isNotCapturing) playSound(1);
                     pieceSet[set] = [col, row];
                     if(selectedPiece.includes(activeSide)) activeSide = activeSide === 'white' ? 'black' : 'white';
                 }
@@ -248,24 +263,28 @@ function movePiece(selectedPiece, col, row, pieceSet) {
                 if(piece === selectedPiece.substring(6)){
                     if (selectedPiece.includes('pawn')) {
                         if(isValidPawnMove(color, pieceSet[set][piece], [col, row]) && !isPathBlocked(pieceSet[set][piece], [col, row])) {
+                            if(isNotCapturing) playSound(1);
                             pieceSet[set][piece] = [col, row];
                             if(selectedPiece.includes(activeSide)) activeSide = activeSide === 'white' ? 'black' : 'white';
                         } 
                     }
                     if (selectedPiece.includes('rook')) {
                         if(isValidRookMove(color, pieceSet[set][piece], [col, row]) && !isPathBlocked(pieceSet[set][piece], [col, row])) {
+                            if(isNotCapturing) playSound(1);
                             pieceSet[set][piece] = [col, row];
                             if(selectedPiece.includes(activeSide)) activeSide = activeSide === 'white' ? 'black' : 'white';
                         } 
                     }
                     if (selectedPiece.includes('bishop')) {
                         if(isValidBishopMove(color, pieceSet[set][piece], [col, row]) && !isPathBlocked(pieceSet[set][piece], [col, row])) {
+                            if(isNotCapturing) playSound(1);
                             pieceSet[set][piece] = [col, row];
                             if(selectedPiece.includes(activeSide)) activeSide = activeSide === 'white' ? 'black' : 'white';
                         } 
                     }
                     if (selectedPiece.includes('knight')) {
                         if(isValidKnightMove(color, pieceSet[set][piece], [col, row]) && !isPathBlocked(pieceSet[set][piece], [col, row])) {
+                            if(isNotCapturing) playSound(1);
                             pieceSet[set][piece] = [col, row];
                             if(selectedPiece.includes(activeSide)) activeSide = activeSide === 'white' ? 'black' : 'white';
                         } 
@@ -275,6 +294,25 @@ function movePiece(selectedPiece, col, row, pieceSet) {
             });
         }
     });
+}
+
+function performCastle(castleToSide){
+    if(activeSide === 'white'){
+        if(castleToSide === 'king'){
+            whiteSet.white_rook.h_rook = [5, 7];
+        }
+        else {
+            whiteSet.white_rook.a_rook = [3, 7];
+        }
+    }
+    else {
+        if(castleToSide === 'king'){
+            blackSet.black_rook.h_rook = [5, 0];
+        }
+        else {
+            blackSet.black_rook.a_rook = [3, 5];
+        }
+    }
 }
 
 function getValidMoves(selectedPiece, pieceSet) {
@@ -416,7 +454,7 @@ canvas.addEventListener('click', e => {
         whitePiece ? selectedPiece = "white_" + whitePiece : selectedPiece = "black_" + blackPiece;
     }
     else {
-        movePiece(selectedPiece, col, row, pieceSet());
+        if(hasStarted) movePiece(selectedPiece, col, row, pieceSet());
         selectedPiece = null;
     }
 
@@ -433,26 +471,50 @@ canvas.addEventListener('click', e => {
     );
 });
 
-function drawPieces(pieceSet, icons){
+function getImage(piece, color) {
+    const pieceType = [
+        'pawn',
+        'rook',
+        'bishop',
+        'knight',
+        'king',
+        'queen',
+    ];
+    let src = '';
+
+    pieceType.forEach(type => {
+        if (piece.includes(type)) {
+            if (color === 'white') {
+                src = pieceSrc.white[type];
+            } else if (color === 'black') {
+                src = pieceSrc.black[type];
+            }
+        }
+    });
+
+    return src;
+}
+
+function drawPieces(pieceSet){
+    const color = pieceSet == whiteSet ? 'white' : 'black';
     Object.keys(pieceSet).forEach(set => {
         if(typeof pieceSet[set] !== 'number'){
             drawPiece(
                 pieceSet[set][0],
                 pieceSet[set][1],
-                pieceSet.color,
-                pieceSrc.black.pawn
+                { type: set.slice(6), color }
             );
         }
         Object.keys(pieceSet[set]).forEach(piece => {
             drawPiece(
                 pieceSet[set][piece][0], 
                 pieceSet[set][piece][1], 
-                pieceSet.color,
-                pieceSrc.black.pawn
-            )
+                { type: piece.slice(2), color }
+            );
         });
     });
 }
+
 
 // canvas.addEventListener('mousemove', e => {
 //     const rect = canvas.getBoundingClientRect();
@@ -473,7 +535,10 @@ function drawPieces(pieceSet, icons){
 //     );
 // });
 
-drawBoard();
+window.onload = function() {
+    drawBoard();
+};
+
 document.getElementById('start-btn').addEventListener('click', start);
 
 export {
@@ -482,5 +547,6 @@ export {
     whiteSet,
     isPathBlocked,
     pieceAtPosition,
-    capturePiece
+    capturePiece,
+    performCastle
 }

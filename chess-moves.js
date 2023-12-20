@@ -32,9 +32,9 @@ function isValidQueenMove(color, initialPosition, targetPosition, isChecking) {
 
     const dxValid = dx === dy || initialPosition[0] === targetPosition[0] || initialPosition[1] === targetPosition[1];
 
-    if (dxValid) {
+    if (dxValid && !isPathBlocked(initialPosition, targetPosition)) {
         const capturedPiece = pieceAtPosition(opposingPieceSet, targetPosition[0], targetPosition[1]);
-        if (capturedPiece && !capturedPiece.startsWith(color) && !isPathBlocked(initialPosition, targetPosition)) {
+        if (capturedPiece && !capturedPiece.startsWith(color)) {
             if(!isChecking) capturePiece(opposingPieceSet, targetPosition[0], targetPosition[1]);
             return true;
         } else if (!pieceAtPosition(ownPieceSet, targetPosition[0], targetPosition[1])) {
@@ -92,18 +92,15 @@ function isValidRookMove(color, initialPosition, targetPosition, isChecking) {
 
     const validMove = initialPosition[0] === targetPosition[0] || initialPosition[1] === targetPosition[1];
 
-    if (validMove) {
-        if (!isPathBlocked(initialPosition, targetPosition)) {
-            const capturedPiece = pieceAtPosition(opposingPieceSet, targetPosition[0], targetPosition[1]);
-            if (capturedPiece && !capturedPiece.startsWith(color)) {
-                if(!isChecking) capturePiece(opposingPieceSet, targetPosition[0], targetPosition[1]);
-                return true;
-            } else if (!pieceAtPosition(ownPieceSet, targetPosition[0], targetPosition[1])) {
-                return true;
-            }
+    if (validMove && !isPathBlocked(initialPosition, targetPosition)) {
+        const capturedPiece = pieceAtPosition(opposingPieceSet, targetPosition[0], targetPosition[1]);
+        if (capturedPiece && !capturedPiece.startsWith(color)) {
+            if(!isChecking) capturePiece(opposingPieceSet, targetPosition[0], targetPosition[1]);
+            return true;
+        } else if (!pieceAtPosition(ownPieceSet, targetPosition[0], targetPosition[1])) {
+            return true;
         }
     }
-
     return false;
 }
 
@@ -116,21 +113,7 @@ function isValidBishopMove(color, initialPosition, targetPosition, isChecking) {
 
     const validMove = dx === dy;
 
-    if (validMove) {
-        const directionX = targetPosition[0] > initialPosition[0] ? 1 : -1;
-        const directionY = targetPosition[1] > initialPosition[1] ? 1 : -1;
-
-        let x = initialPosition[0] + directionX;
-        let y = initialPosition[1] + directionY;
-
-        while (x !== targetPosition[0] || y !== targetPosition[1]) {
-            if (pieceAtPosition(ownPieceSet, x, y) || pieceAtPosition(opposingPieceSet, x, y)) {
-                return false;
-            }
-            x += directionX;
-            y += directionY;
-        }
-
+    if (validMove && !isPathBlocked(initialPosition, targetPosition)) {
         const capturedPiece = pieceAtPosition(opposingPieceSet, targetPosition[0], targetPosition[1]);
         if (capturedPiece && !capturedPiece.startsWith(color)) {
             if(!isChecking) capturePiece(opposingPieceSet, targetPosition[0], targetPosition[1]);
@@ -138,7 +121,6 @@ function isValidBishopMove(color, initialPosition, targetPosition, isChecking) {
         } else if (!pieceAtPosition(ownPieceSet, targetPosition[0], targetPosition[1])) {
             return true;
         }
-        return true;
     }
 
     return false;
@@ -161,7 +143,6 @@ function isValidKnightMove(color, initialPosition, targetPosition, isChecking) {
         } else if (!pieceAtPosition(ownPieceSet, targetPosition[0], targetPosition[1])) {
             return true;
         }
-        return true;
     }
 
     return false;

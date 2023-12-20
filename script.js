@@ -227,7 +227,6 @@ function capturePiece(pieceSet, col, row) {
 
 function movePiece(selectedPiece, col, row, pieceSet) {
     const color = selectedPiece.includes('white') ? 'white' : 'black';
-
     Object.keys(pieceSet).find(set => {
         if(set === selectedPiece.substring(6)){
             if(selectedPiece.includes('king')){
@@ -302,15 +301,13 @@ function getValidMoves(selectedPiece, pieceSet) {
         return piecePosition;
     }
     
-    
     const position = getPiecePosition();
-    console.log(position)
     if(position){
         if (selectedPiece.includes('king')) {
             for (let col = 0; col < 8; col++) {
                 for (let row = 0; row < 8; row++) {
                     const targetPosition = [col, row];
-                    if (isValidKingMove(color, position, targetPosition, true)) {
+                    if (isValidKingMove(color, position, targetPosition, true) && !isPathBlocked(position, targetPosition)) {
                         validMoves.push(targetPosition);
                     }
                 }
@@ -319,7 +316,7 @@ function getValidMoves(selectedPiece, pieceSet) {
             for (let col = 0; col < 8; col++) {
                 for (let row = 0; row < 8; row++) {
                     const targetPosition = [col, row];
-                    if (isValidQueenMove(color, position, targetPosition, true)) {
+                    if (isValidQueenMove(color, position, targetPosition, true) && !isPathBlocked(position, targetPosition)) {
                         validMoves.push(targetPosition);
                     }
                 }
@@ -328,7 +325,7 @@ function getValidMoves(selectedPiece, pieceSet) {
             for (let col = 0; col < 8; col++) {
                 for (let row = 0; row < 8; row++) {
                     const targetPosition = [col, row];
-                    if (isValidPawnMove(color, position, targetPosition, pieceSet, true)) {
+                    if (isValidPawnMove(color, position, targetPosition, pieceSet, true) && !isPathBlocked(position, targetPosition)) {
                         validMoves.push(targetPosition);
                     }
                 }
@@ -337,7 +334,7 @@ function getValidMoves(selectedPiece, pieceSet) {
             for (let col = 0; col < 8; col++) {
                 for (let row = 0; row < 8; row++) {
                     const targetPosition = [col, row];
-                    if (isValidRookMove(color, position, targetPosition, true)) {
+                    if (isValidRookMove(color, position, targetPosition, true) && !isPathBlocked(position, targetPosition)) {
                         validMoves.push(targetPosition);
                     }
                 }
@@ -355,7 +352,7 @@ function getValidMoves(selectedPiece, pieceSet) {
             for (let col = 0; col < 8; col++) {
                 for (let row = 0; row < 8; row++) {
                     const targetPosition = [col, row];
-                    if (isValidKnightMove(color, position, targetPosition, true)) {
+                    if (isValidKnightMove(color, position, targetPosition, true) && !isPathBlocked(position, targetPosition)) {
                         validMoves.push(targetPosition);
                     }
                 }
@@ -392,7 +389,6 @@ function highlightValidMoves() {
             canvasContext.fillStyle = 'rgba(0, 255, 0, 0.25)'; 
             canvasContext.fillRect(move[0] * cellCize, move[1] * cellCize, cellCize, cellCize);
         });
-        console.log(validMoves)
     }
 }
 
@@ -407,12 +403,12 @@ canvas.addEventListener('click', e => {
     const whitePiece = findPieceInPosition(whiteSet, col, row);
     const blackPiece = findPieceInPosition(blackSet, col, row);
 
-    const pieceSet = ()=> {
+    function pieceSet(){
         if(activeSide === 'white'){
-            whiteSet;
+            return whiteSet;
         }
         else if(activeSide === 'black'){
-            blackSet;
+            return blackSet;
         }
     };
 
@@ -420,7 +416,7 @@ canvas.addEventListener('click', e => {
         whitePiece ? selectedPiece = "white_" + whitePiece : selectedPiece = "black_" + blackPiece;
     }
     else {
-        movePiece(selectedPiece, col, row, pieceSet);
+        movePiece(selectedPiece, col, row, pieceSet());
         selectedPiece = null;
     }
 
